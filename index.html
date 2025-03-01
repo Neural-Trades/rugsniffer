@@ -3,45 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecting...</title>
+    <title>Solana Pay Redirect</title>
     <script>
-        window.location.href = "solana:YOUR_WALLET?amount=1&spl-token=SOL";
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            const recipient = params.get("recipient");
+            const amount = params.get("amount");
+            const splToken = params.get("spl-token");
+            const memo = params.get("memo");
+
+            let solanaUrl = `solana:${recipient}?amount=${amount}`;
+            if (splToken) {
+                solanaUrl += `&spl-token=${splToken}`;
+            }
+            if (memo) {
+                solanaUrl += `&memo=${memo}`;
+            }
+
+            // Redireciona para Solana Pay
+            window.location.href = solanaUrl;
+
+            // Caso o redirecionamento falhe, exibe um link manual
+            setTimeout(() => {
+                document.getElementById("redirect-message").innerText = "If you are not redirected, click the button below:";
+                document.getElementById("solana-link").href = solanaUrl;
+                document.getElementById("solana-link").style.display = "block";
+            }, 3000);
+        };
     </script>
 </head>
 <body>
-    <p>If you are not redirected, <a href="solana:YOUR_WALLET?amount=1&spl-token=SOL">click here</a>.</p>
+    <h2>Redirecting to Solana Pay...</h2>
+    <p id="redirect-message">Please wait...</p>
+    <a id="solana-link" style="display: none;" target="_blank">Open Solana Pay</a>
 </body>
-
-<script>
-    function getUrlParams() {
-        const params = new URLSearchParams(window.location.search);
-        return {
-            recipient: params.get('recipient') || '',
-            amount: params.get('amount') || '0',
-            token: params.get('token') || 'SOL',
-            referral: params.get('referral') || 'none'
-        };
-    }
-
-    function redirectToSolanaPay() {
-        const { recipient, amount, token, referral } = getUrlParams();
-
-        if (!recipient || amount <= 0) {
-            document.body.innerHTML = "<h2>Invalid Payment Request</h2>";
-            return;
-        }
-
-        // ✅ Monta o link Solana Pay
-        const solanaPayUrl = `solana:${recipient}?amount=${amount}&spl-token=${token}&memo=Referral_${referral}`;
-        
-        // ✅ Redireciona automaticamente
-        window.location.href = solanaPayUrl;
-
-        // ✅ Caso o redirecionamento falhe, exibe um botão manual
-        document.body.innerHTML = `<h2>Redirecting...</h2><p>If not redirected, <a href="${solanaPayUrl}">click here</a>.</p>`;
-    }
-
-    // ✅ Chama a função ao carregar a página
-    window.onload = redirectToSolanaPay;
-</script>
 </html>
