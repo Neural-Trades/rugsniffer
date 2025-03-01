@@ -5,7 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solana Pay Redirect</title>
     <script>
-        window.onload = async function() {
+        async function checkTransactionAndNotifyBot(chatId) {
+            try {
+                const provider = window.solana;
+                if (!provider) {
+                    console.log("❌ Solana provider not found.");
+                    return;
+                }
+
+                // 🔄 Aguarda um tempo antes de buscar transações (para dar tempo do usuário concluir o pagamento)
+                await new Promise(resolve => setTimeout(resolve, 5000));
+
+                const response = await provider.request({
+                    method: "getRecentTransactions",
+                    params: [provider.publicKey.toString()]
+                });
+
+                if (response.length > 0) {
+                    const txId = response[0]; // Pega o último `txId`
+                    console.log("✅ Transaction ID detected:", txId);
+
+                    // 🔥 Envia o `txId` para o bot do Telegram
+                    await fetch(`https://api.telegram.org/bot7325886083:AAG2Rkk4lwHGxxhW0m2qofUwjIB0ZbwsWWc/sendMessage`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            chat_id: chatId,
+                            text: `🔄 Payment detected! Verifying transaction: ${txId}`
+                        })
+                    });
+
+                    // ✅ Confirmação na página
+                    document.getElementById("redirect-message").innerText = "✅ Payment sent successfully! Your membership will be activated shortly.";
+                } else {
+                    console.log("⚠️ No transactions found.");
+                }
+            } catch (error) {
+                console.error("❌ Error getting transaction:", error);
+                document.getElementById("redirect-message").innerText = "❌ Failed to verify transaction. Please contact support.";
+            }
+        }
+
+        window.onload = function() {
             const params = new URLSearchParams(window.location.search);
             const recipient = params.get("recipient");
             const amount = params.get("amount");
@@ -21,7 +62,7 @@
                 solanaUrl += `&memo=${memo}`;
             }
 
-            // Redireciona para Solana Pay
+            // 🔥 Redireciona automaticamente para Solana Pay
             window.location.href = solanaUrl;
 
             // Caso o redirecionamento falhe, exibe um link manual
@@ -31,41 +72,8 @@
                 document.getElementById("solana-link").style.display = "block";
             }, 3000);
 
-            // 🔥 Aguarda a confirmação da transação na carteira Solana (com Phantom/Solflare)
-            await new Promise(resolve => setTimeout(resolve, 5000)); // Tempo para concluir transação
-
-            try {
-                const provider = window.solana;
-                if (!provider) {
-                    console.log("❌ Solana provider not found.");
-                    return;
-                }
-
-                const response = await provider.request({ method: "getRecentTransactions", params: [provider.publicKey.toString()] });
-
-                if (response.length > 0) {
-                    const txId = response[0]; // Pega o último `txId`
-                    console.log("✅ Transaction ID:", txId);
-
-                    // Envia o `txId` para o bot do Telegram
-                    await fetch(`https://api.telegram.org/bot<YOUR_BOT_TOKEN>/sendMessage`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            chat_id: chatId,
-                            text: `🔄 Payment detected! Verifying transaction: ${txId}`,
-                        })
-                    });
-
-                    // Mensagem de confirmação
-                    document.getElementById("redirect-message").innerText = "✅ Payment sent successfully! Your membership will be activated shortly.";
-                } else {
-                    console.log("⚠️ No transactions found.");
-                }
-            } catch (error) {
-                console.error("❌ Error getting transaction:", error);
-                document.getElementById("redirect-message").innerText = "❌ Failed to verify transaction. Please contact support.";
-            }
+            // 🚀 Aguarda transação e notifica o bot do Telegram
+            checkTransactionAndNotifyBot(chatId);
         };
     </script>
 </head>
