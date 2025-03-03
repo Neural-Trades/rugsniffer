@@ -1,28 +1,40 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecionando para Solana Pay</title>
+    <title>Solana Pay Redirect</title>
     <script>
-        // Função para redirecionar e fechar a janela
-        function redirectAndClose(url) {
-            // Redireciona para a URL da carteira
-            window.location.href = url;
-            // Fecha a janela após um atraso de 3 segundos
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            const recipient = params.get("recipient");
+            const amount = params.get("amount");
+            const splToken = params.get("spl-token");
+            const memo = params.get("memo");
+
+            let solanaUrl = `solana:${recipient}?amount=${amount}`;
+            if (splToken) {
+                solanaUrl += `&spl-token=${splToken}`;
+            }
+            if (memo) {
+                solanaUrl += `&memo=${memo}`;
+            }
+
+            // Redireciona para Solana Pay
+            window.location.href = solanaUrl;
+
+            // Caso o redirecionamento falhe, exibe um link manual
             setTimeout(() => {
-                window.close();
-            }, 3000); // Ajusta o tempo se necessário
-        }
+                document.getElementById("redirect-message").innerText = "If you are not redirected, click the button below:";
+                document.getElementById("solana-link").href = solanaUrl;
+                document.getElementById("solana-link").style.display = "block";
+            }, 3000);
+        };
     </script>
 </head>
 <body>
-    <h1>Redirecionando para Solana Pay...</h1>
-    <p>Se não for redirecionado, <a href="#" onclick="redirectAndClose('solana:...')">clique aqui</a>.</p>
-    <script>
-        // Executa automaticamente ao carregar a página
-        const url = 'solana:...'; // Substitui pela URL real do teu pagamento
-        redirectAndClose(url);
-    </script>
+    <h2>Redirecting to Solana Pay...</h2>
+    <p id="redirect-message">Please wait...</p>
+    <a id="solana-link" style="display: none;" target="_blank">Open Solana Pay</a>
 </body>
 </html>
