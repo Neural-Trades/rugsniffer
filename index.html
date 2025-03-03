@@ -5,71 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solana Pay Redirect</title>
     <script>
-        async function checkTransactionAndNotifyBot(chatId) {
-            try {
-                const provider = window.solana;
-                if (!provider || !chatId) {
-                    console.log("❌ Solana provider or chatId not found.");
-                    return;
-                }
-                await new Promise(resolve => setTimeout(resolve, 5000)); // Aguarda 5 segundos
-                const response = await provider.request({
-                    method: "getRecentTransactions",
-                    params: [provider.publicKey.toString()]
-                });
-                if (response.length > 0) {
-                    const txId = response[0];
-                    console.log("✅ Transaction ID detected:", txId);
-                    await fetch(`https://api.telegram.org/bot7325886083:AAG2Rkk4lwHGxxhW0m2qofUwjIB0ZbwsWWc/sendMessage`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            chat_id: chatId,
-                            text: `🔄 Payment detected! Verifying transaction: ${txId}`
-                        })
-                    });
-                    document.getElementById("redirect-message").innerText = "✅ Payment sent successfully! Your membership will be activated shortly.";
-                } else {
-                    console.log("⚠️ No transactions found.");
-                }
-            } catch (error) {
-                console.error("❌ Error getting transaction:", error);
-                document.getElementById("redirect-message").innerText = "❌ Failed to verify transaction. Please contact support.";
-            }
-        }
-
         window.onload = function() {
             const params = new URLSearchParams(window.location.search);
             const recipient = params.get("recipient");
             const amount = params.get("amount");
             const splToken = params.get("spl-token");
             const memo = params.get("memo");
-            const chatId = params.get("chat_id");
 
-            if (!recipient || !amount || !memo || !chatId) {
-                document.getElementById("redirect-message").innerText = "❌ Invalid payment parameters.";
-                return;
+            let solanaUrl = `solana:${recipient}?amount=${amount}`;
+            if (splToken) {
+                solanaUrl += `&spl-token=${splToken}`;
+            }
+            if (memo) {
+                solanaUrl += `&memo=${memo}`;
             }
 
-            // Construção do link com ou sem codificação
-            let solanaUrl = `solana:${recipient}?amount=${amount}`;
-            if (splToken) solanaUrl += `&spl-token=${splToken}`;
-            if (memo) solanaUrl += `&memo=${memo}`; // Sem encodeURIComponent para testar compatibilidade
-
-            // Log para depuração
-            console.log("🔗 Generated Solana Pay URL:", solanaUrl);
-
-            // Tentativa de redirecionamento
+            // Redireciona para Solana Pay
             window.location.href = solanaUrl;
 
-            // Fallback manual
+            // Caso o redirecionamento falhe, exibe um link manual
             setTimeout(() => {
-                document.getElementById("redirect-message").innerText = "Se você não foi redirecionado, clique no botão abaixo:";
+                document.getElementById("redirect-message").innerText = "If you are not redirected, click the button below:";
                 document.getElementById("solana-link").href = solanaUrl;
                 document.getElementById("solana-link").style.display = "block";
             }, 3000);
-
-            checkTransactionAndNotifyBot(chatId);
         };
     </script>
 </head>
